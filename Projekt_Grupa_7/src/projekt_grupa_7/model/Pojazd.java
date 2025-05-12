@@ -1,13 +1,30 @@
 package projekt_grupa_7.model;
 
+/**
+ * Abstrakcyjna klasa bazowa reprezentująca ogólny pojazd w wypożyczalni.
+ * Definiuje wspólne cechy i zachowania dla wszystkich typów pojazdów.
+ * Klasy dziedziczące muszą zaimplementować metodę {@link #wyswietlSzczegoly()}.
+ */
+
 public abstract class Pojazd {
-protected String id; // Np. numer rejestracyjny
+    protected String id; // Konkretnie numer rejstracyjny
     protected String marka;
     protected String model;
     protected int rokProdukcji;
     protected double stawkaDobowa;
     protected boolean czyDostepny;
-
+    
+    /**
+     * Konstruktor inicjalizujący wspólne pola dla wszystkich pojazdów.
+     * Ustawia pojazd jako domyślnie dostępny.
+     *
+     * @param id           Unikalny identyfikator pojazdu.
+     * @param marka        Marka pojazdu.
+     * @param model        Model pojazdu.
+     * @param rokProdukcji Rok produkcji pojazdu.
+     * @param stawkaDobowa Stawka dobowa za wypożyczenie.
+     */
+    
     public Pojazd(String id, String marka, String model, int rokProdukcji, double stawkaDobowa) {
         this.id = id;
         this.marka = marka;
@@ -31,8 +48,10 @@ protected String id; // Np. numer rejestracyjny
     }
 
     /**
-     * Formatuje wspólne szczegóły dla wszystkich typów pojazdów.
-     * @return Sformatowany string z wspólnymi danymi.
+     * Formatuje wspólne szczegóły dla wszystkich typów pojazdów w czytelny sposób.
+     * Używane przez metody {@code wyswietlSzczegoly()} w podklasach.
+     * Zawiera ID, markę, model, rok, stawkę i dostępność, poprzedzone tabulatorem.
+     * @return Sformatowany string z wspólnymi danymi, gotowy do włączenia do pełnego opisu.
      */
     protected String formatujWspolneSzczegoly() {
         return String.format(
@@ -52,15 +71,21 @@ protected String id; // Np. numer rejestracyjny
     }
 
     /**
-     * Metoda abstrakcyjna, którą muszą zaimplementować podklasy,
-     * aby wyświetlić pełne, sformatowane szczegóły pojazdu.
-     * @return Sformatowany string ze wszystkimi szczegółami pojazdu.
+     * Abstrakcyjna metoda, którą muszą zaimplementować konkretne klasy pojazdów (Koparka, Dzwig, Wywrotka).
+     * Powinna zwracać pełny, sformatowany opis pojazdu, zawierający zarówno wspólne,
+     * jak i specyficzne atrybuty danego typu. Zalecane użycie {@link #formatujWspolneSzczegoly()}.
+     * @return Sformatowany, wieloliniowy string ze wszystkimi szczegółami pojazdu.
      */
+    
     public abstract String wyswietlSzczegoly();
 
-    // Opcjonalnie: Możesz też zmodyfikować domyślną metodę toString(),
-    // jeśli jest gdzieś używana do prostego logowania.
-    // Ale dla GUI będziemy polegać na wyswietlSzczegoly().
+    
+     /**
+     * Zwraca podstawową, jedno-liniową reprezentację tekstową obiektu Pojazd.
+     * Przydatne do szybkiej identyfikacji lub logowania.
+     * @return String w formacie "Marka Model (ID: id)".
+     */
+    
     @Override
     public String toString() {
         return String.format("%s %s (ID: %s)", marka, model, id); // Prosty identyfikator

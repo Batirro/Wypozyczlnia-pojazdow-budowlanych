@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"projekt_grupa_7"},{"l":"projekt_grupa_7.gui"},{"l":"projekt_grupa_7.model"},{"l":"projekt_grupa_7.repozytorium"},{"l":"projekt_grupa_7.repozytorium.implementacje"},{"l":"projekt_grupa_7.serwis"}];updateSearchResults();

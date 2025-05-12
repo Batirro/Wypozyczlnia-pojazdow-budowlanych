@@ -15,34 +15,59 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+/**
+ * Główna klasa aplikacji wypożyczalni.
+ * Odpowiada za inicjalizację komponentów (repozytoria, serwis),
+ * ewentualne dodanie danych początkowych oraz uruchomienie
+ * graficznego interfejsu użytkownika (GUI).
+ */
+
 public class Projekt_Grupa_7 {
+    /**
+     * Główna metoda uruchomieniowa aplikacji.
+     * @param args Argumenty wiersza poleceń (nieużywane w tej aplikacji).
+     */
     public static void main(String[] args) {
-        // Inicjalizacja repozytoriów
+        // Inicjalizacja warstwy dostępu do danych (Repozytoria)
+        // Używamy implementacji "InMemory", które przechowują dane w listach w pamięci RAM.
+        // W wersji produkcyjnej tutaj tworzylibyśmy instancje repozytoriów bazodanowych.
         RepozytoriumPojazdow repoPojazdow = new InMemoryPojazdRepository();
         RepozytoriumKlientow repoKlientow = new InMemoryKlientRepository();
         RepozytoriumWypozyczen repoWypozyczen = new InMemoryWypozyczenieRepository();
 
-        // Inicjalizacja serwisu
+        // Inicjalizacja warstwy logiki biznesowej (Serwis)
+        // Tworzymy serwis, wstrzykując do niego utworzone repozytoria.
+        // Serwis będzie używał repozytoriów do operacji na danych.
+        // Użycie final zapewnia, że referencja do serwisu nie zostanie zmieniona później.
         final SerwisWypozyczen serwis = new SerwisWypozyczen(repoPojazdow, repoKlientow, repoWypozyczen);
 
-        // Dodajmy przykładowe dane (opcjonalnie, można też dodawać przez GUI)
+        // Dodajmy przykładowe dane
         dodajDanePoczatkowe(serwis);
 
 
-        // Uruchomienie GUI
+        // Uruchomienie Graficznego Interfejsu Użytkownika (GUI)
+        // GUI Swinga powinno być tworzone i modyfikowane w specjalnym wątku - Event Dispatch Thread (EDT).
+        // SwingUtilities.invokeLater() zapewnia, że kod tworzący i pokazujący okno GUI
+        // zostanie wykonany właśnie w tym wątku, co zapobiega problemom z odświeżaniem interfejsu.
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
+                // Tworzymy instancję okna GUI, przekazując do niego referencję do serwisu.
+                // GUI będzie używać serwisu do wykonywania wszystkich operacji biznesowych.
                 new SerwisWypozyczenGUI(serwis).setVisible(true);
             }
         });
     }
-
+    /**
+     * Metoda pomocnicza do dodawania początkowych danych do repozytoriów
+     * za pośrednictwem serwisu. Używana do celów demonstracyjnych i testowych.
+     * @param serwis Instancja serwisu wypożyczeń, przez którą dodawane są dane.
+     */
     private static void dodajDanePoczatkowe(SerwisWypozyczen serwis) {
-        System.out.println("--- DODAWANIE DANYCH POCZĄTKOWYCH (dla GUI) ---");
-        // Użyj metody getNextId z repozytorium, jeśli jest dostępna i potrzebna dla ID
-        // W GUI będziemy polegać na tym, że serwis/repozytorium samo zarządza ID
-        // lub użytkownik wpisuje istniejące.
-        // Poniższe ID są przykładowe, jeśli repozytorium samo je generuje, mogą być inne.
+        System.out.println("--- DODAWANIE DANYCH POCZĄTKOWYCH ---");
+        // --- Dodawanie Klientów ---
+        // Uwaga: Zarządzanie ID w repozytoriach InMemory może wymagać uwagi.
+        // Tutaj tworzymy obiekty Klient i używamy metody serwis.dodajKlienta(Klient).
+        // Metoda ta powinna poprawnie obsłużyć zapis w repozytorium.
 
         // Pobieranie ID za pomocą refleksji (mniej idealne, ale działa dla przykładu)
         int idKlienta1 = 1, idKlienta2 = 2;
@@ -72,6 +97,7 @@ public class Projekt_Grupa_7 {
         try {
             Date dataOd = sdf.parse("2024-01-10");
             Date dataDo = sdf.parse("2024-01-15");
+            // Używamy ID klienta, które zostało potencjalnie nadane przez repozytorium (ważne, by pobrać je z obiektu)
             serwis.zarejestrujWypozyczenie(klient1.getIdKlienta(), koparkaGUI.getId(), dataOd, dataDo);
         } catch (ParseException e) {
             System.err.println("Błąd parsowania daty przy dodawaniu danych początkowych: " + e.getMessage());

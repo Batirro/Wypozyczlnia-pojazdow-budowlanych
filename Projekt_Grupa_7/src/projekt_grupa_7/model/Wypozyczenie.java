@@ -1,5 +1,11 @@
 package projekt_grupa_7.model;
 
+/**
+ * Reprezentuje pojedyncze wypożyczenie pojazdu przez klienta.
+ * Łączy obiekt Klienta i Pojazdu oraz przechowuje informacje o datach,
+ * kosztach i statusie wypożyczenia.
+ */
+
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
@@ -13,7 +19,18 @@ public class Wypozyczenie {
     private Date faktycznaDataZakonczenia;
     private double calkowityKoszt;
     private boolean czyZakonczone;
-
+    
+    /**
+     * Konstruktor tworzący nową instancję Wypozyczenia.
+     * Ustawia domyślnie status na nieukończone i koszt na 0.
+     *
+     * @param idWypozyczenia         Unikalny identyfikator wypożyczenia nadawany przez system/serwis.
+     * @param klient                 Obiekt Klienta wypożyczającego pojazd.
+     * @param pojazd                 Obiekt Pojazdu, który jest wypożyczany.
+     * @param dataRozpoczecia        Data rozpoczęcia wypożyczenia.
+     * @param planowanaDataZakonczenia Planowana data zakończenia wypożyczenia.
+     */
+    
     public Wypozyczenie(int idWypozyczenia, Klient klient, Pojazd pojazd, Date dataRozpoczecia, Date planowanaDataZakonczenia) {
         this.idWypozyczenia = idWypozyczenia;
         this.klient = klient;
@@ -30,6 +47,11 @@ public class Wypozyczenie {
     public Pojazd getPojazd() { return pojazd; }
     public Date getDataRozpoczecia() { return dataRozpoczecia; }
     public Date getPlanowanaDataZakonczenia() { return planowanaDataZakonczenia; }
+    /**
+     * Zwraca faktyczną datę zakończenia wypożyczenia (zwrotu pojazdu).
+     * Może zwrócić null, jeśli wypożyczenie jest nadal aktywne.
+     * @return Faktyczna data zakończenia lub null.
+     */
     public Date getFaktycznaDataZakonczenia() { return faktycznaDataZakonczenia; }
     public double getCalkowityKoszt() {
         // Zawsze przeliczaj koszt, gdy jest pobierany, aby był aktualny, jeśli daty się zmieniły
@@ -47,7 +69,17 @@ public class Wypozyczenie {
         this.czyZakonczone = true;
         obliczKoszt(); // Przelicz koszt przy zakończeniu
     }
-
+    
+    /**
+     * Oblicza (lub przelicza) całkowity koszt wypożyczenia.
+     * Bierze pod uwagę stawkę dobową pojazdu i liczbę dni między datą rozpoczęcia
+     * a datą zakończenia (faktyczną, jeśli dostępna i wypożyczenie zakończone,
+     * w przeciwnym razie planowaną).
+     * Minimalny okres rozliczeniowy to 1 dzień. Wynik zapisuje w polu {@code calkowityKoszt}.
+     *
+     * @return Obliczony całkowity koszt. Zwraca 0, jeśli brakuje wymaganych danych (daty, pojazd).
+     */
+    
     public double obliczKoszt() {
         Date koniec;
         if (czyZakonczone && faktycznaDataZakonczenia != null) {
@@ -98,7 +130,9 @@ public class Wypozyczenie {
             dataFaktZakStr = faktycznaDataZakonczenia != null ? sdfOutput.format(faktycznaDataZakonczenia) : "Zakończone (brak daty)";
         }
 
-
+        // Oblicz koszt przed wyświetleniem, aby mieć pewność, że jest aktualny
+        // Chociaż lepiej polegać na tym, że koszt jest aktualizowany w odpowiednich momentach.
+        // double aktualnyKosztDoWyswietlenia = obliczKoszt(); // Można, ale zmienia stan obiektu
         return String.format(
             "Wypożyczenie ID: %d\n" +
             "\tKlient: %s (ID: %d)\n" +
@@ -117,7 +151,7 @@ public class Wypozyczenie {
             dataRozpStr,
             dataPlanZakStr,
             dataFaktZakStr,
-            calkowityKoszt, // Polegamy na tym, że zostało poprawnie obliczone wcześniej
+            calkowityKoszt,
             isCzyZakonczone() ? "Zakończone" : "Aktywne"
         );
     }

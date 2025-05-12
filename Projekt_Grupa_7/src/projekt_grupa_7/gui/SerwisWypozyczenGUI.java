@@ -2,7 +2,7 @@ package projekt_grupa_7.gui;
 
 import projekt_grupa_7.model.*;
 import projekt_grupa_7.serwis.SerwisWypozyczen;
-
+// Importy Swinga, AWT, modelu, serwisu, repozytoriów, JDateChooser, etc.
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;

@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package projekt_grupa_7.serwis;
 
 import projekt_grupa_7.model.Klient;
@@ -14,19 +10,63 @@ import java.util.Date;
 import java.util.List;
 import java.util.ArrayList;
 
+/**
+ * Główna klasa serwisowa aplikacji, enkapsulująca logikę biznesową.
+ * Działa jako fasada dla operacji związanych z wypożyczeniami, zarządzaniem flotą
+ * i klientami. Koordynuje interakcje między różnymi repozytoriami.
+ * Jest zaprojektowana do pracy z interfejsami repozytoriów, co umożliwia
+ * łatwą zmianę implementacji warstwy dostępu do danych (np. z In-Memory na bazę danych).
+ *
+ * @see projekt_grupa_7.repozytorium.RepozytoriumPojazdow
+ * @see projekt_grupa_7.repozytorium.RepozytoriumKlientow
+ * @see projekt_grupa_7.repozytorium.RepozytoriumWypozyczen
+ * @see projekt_grupa_7.gui.RentalAppGUI
+ */
+
 public class SerwisWypozyczen {
+    /** Referencja do repozytorium pojazdów (interfejs). */
     private final RepozytoriumPojazdow repoPojazdow;
+    /** Referencja do repozytorium klientów (interfejs). */
     private final RepozytoriumKlientow repoKlientow;
+    /** Referencja do repozytorium wypożyczeń (interfejs). */
     private final RepozytoriumWypozyczen repoWypozyczen;
+    /**
+     * Prosty, statyczny licznik ID dla nowych wypożyczeń.
+     * Nadaje ID przed zapisem do repozytorium.
+     */
     private static int nextWypozyczenieId = 1;
 
-
+    /**
+     * Konstruktor serwisu, realizujący wstrzykiwanie zależności (Dependency Injection).
+     * Przyjmuje konkretne implementacje repozytoriów (choć typowane przez interfejsy).
+     *
+     * @param repoPojazdow Instancja repozytorium pojazdów. Nie powinna być null.
+     * @param repoKlientow Instancja repozytorium klientów. Nie powinna być null.
+     * @param repoWypozyczen Instancja repozytorium wypożyczeń. Nie powinna być null.
+     */
+    
     public SerwisWypozyczen(RepozytoriumPojazdow repoPojazdow, RepozytoriumKlientow repoKlientow, RepozytoriumWypozyczen repoWypozyczen) {
         this.repoPojazdow = repoPojazdow;
         this.repoKlientow = repoKlientow;
         this.repoWypozyczen = repoWypozyczen;
     }
-
+    
+    /**
+     * Rejestruje nowe wypożyczenie dla podanego klienta i pojazdu w określonym terminie.
+     * Przeprowadza walidację: sprawdza istnienie klienta i pojazdu, dostępność pojazdu.
+     * Jeśli walidacja przebiegnie pomyślnie, tworzy nowy obiekt {@link Wypozyczenie},
+     * nadaje mu unikalne ID, oblicza wstępny koszt, zapisuje go w repozytorium,
+     * a następnie zmienia status dostępności pojazdu na "niedostępny" i zapisuje tę zmianę.
+     *
+     * @param idKlienta ID klienta dokonującego wypożyczenia.
+     * @param idPojazdu ID (np. numer rejestracyjny) wypożyczanego pojazdu.
+     * @param dataOd Data i czas rozpoczęcia wypożyczenia.
+     * @param dataDo Planowana data i czas zakończenia wypożyczenia.
+     * @return Obiekt nowo utworzonego {@link Wypozyczenie} lub {@code null}, jeśli operacja się nie powiodła
+     *         (np. z powodu braku klienta, pojazdu lub jego niedostępności). Komunikaty o błędach
+     *         są logowane na standardowe wyjście błędów.
+     */
+    
     public Wypozyczenie zarejestrujWypozyczenie(int idKlienta, String idPojazdu, Date dataOd, Date dataDo) {
         Klient klient = repoKlientow.znajdzWgId(idKlienta);
         if (klient == null) {
@@ -44,12 +84,12 @@ public class SerwisWypozyczen {
             System.err.println("Błąd: Pojazd " + pojazd.getMarka() + " " + pojazd.getModel() + " nie jest obecnie dostępny.");
             return null;
         }
-
-        // Tutaj można dodać bardziej zaawansowane sprawdzanie kolizji dat, jeśli potrzebne
-
+        
+        // TODO: Dodać bardziej zaawansowane sprawdzanie dostępności pojazdu w zakresie dat [dataOd, dataDo]
+        // Wymagałoby to odpytania repoWypozyczen o istniejące wypożyczenia dla tego pojazdu i sprawdzenia kolizji.
+        
         Wypozyczenie wypozyczenie = new Wypozyczenie(nextWypozyczenieId++, klient, pojazd, dataOd, dataDo);
         wypozyczenie.obliczKoszt(); // Oblicz wstępny koszt
-
         repoWypozyczen.zapisz(wypozyczenie);
         pojazd.zmienDostepnosc(false);
         repoPojazdow.zapisz(pojazd); // Zapisz zmianę statusu pojazdu
@@ -57,7 +97,19 @@ public class SerwisWypozyczen {
         System.out.println("Zarejestrowano wypożyczenie: " + wypozyczenie.getIdWypozyczenia());
         return wypozyczenie;
     }
-
+     /**
+     * Finalizuje (kończy) proces aktywnego wypożyczenia.
+     * Znajduje wypożyczenie o podanym ID. Jeśli istnieje i jest aktywne:
+     * - Ustawia faktyczną datę zakończenia.
+     * - Oznacza wypożyczenie jako zakończone.
+     * - Przelicza ostateczny koszt na podstawie faktycznej daty zwrotu.
+     * - Zapisuje zaktualizowany obiekt wypożyczenia w repozytorium.
+     * - Zmienia status powiązanego pojazdu na "dostępny" i zapisuje tę zmianę.
+     *
+     * @param idWypozyczenia ID wypożyczenia, które ma zostać zakończone.
+     * @param dataFaktycznegoZakonczenia Rzeczywista data i czas zwrotu pojazdu.
+     */
+    
     public void zakonczWypozyczenie(int idWypozyczenia, Date dataFaktycznegoZakonczenia) {
         Wypozyczenie wypozyczenie = repoWypozyczen.znajdzWgId(idWypozyczenia);
         if (wypozyczenie == null) {
@@ -80,10 +132,18 @@ public class SerwisWypozyczen {
         System.out.println("Zakończono wypożyczenie: " + wypozyczenie.getIdWypozyczenia() + ". Ostateczny koszt: " + String.format("%.2f", wypozyczenie.getCalkowityKoszt()) + " PLN");
     }
     
+    /**
+     * Usuwa wszystkie zakończone wypożyczenia z repozytorium.
+     * Iteruje po wszystkich wypożyczeniach, identyfikuje te, które są oznaczone jako zakończone,
+     * a następnie usuwa je z repozytorium.
+     *
+     * @return Liczba usuniętych wypożyczeń.
+     */
     public int usunZakonczoneWypozyczenia() {
         List<Wypozyczenie> wszystkie = repoWypozyczen.znajdzWszystkie();
         int licznikUsunietych = 0;
         // Używamy iteratora lub kopiujemy listę ID do usunięcia, aby uniknąć ConcurrentModificationException
+        // podczas usuwania elementów z listy, po której iterujemy.
         List<Integer> idDoUsuniecia = new ArrayList<>();
         for (Wypozyczenie w : wszystkie) {
             if (w.isCzyZakonczone()) {
@@ -102,11 +162,24 @@ public class SerwisWypozyczen {
         }
         return licznikUsunietych;
     }
-
+     /**
+     * Zwraca listę wszystkich pojazdów aktualnie oznaczonych jako dostępne.
+     * Deleguje wywołanie do {@link RepozytoriumPojazdow#znajdzDostepne()}.
+     * @return Lista dostępnych obiektów {@link Pojazd}.
+     */
     public List<Pojazd> znajdzDostepnePojazdy() {
         return repoPojazdow.znajdzDostepne();
     }
 
+    /**
+     * Oblicza i zwraca całkowitą należność za wypożyczenie o podanym ID.
+     * Jeśli wypożyczenie nie zostanie znalezione, loguje błąd i zwraca 0.
+     * Koszt jest pobierany bezpośrednio z obiektu {@link Wypozyczenie},
+     * który powinien mieć go już obliczonego (np. po zakończeniu wypożyczenia).
+     *
+     * @param idWypozyczenia ID wypożyczenia, dla którego ma być obliczona należność.
+     * @return Całkowity koszt wypożyczenia lub 0, jeśli wypożyczenie nie istnieje.
+     */
     public double obliczNaleznosc(int idWypozyczenia) {
         Wypozyczenie wypozyczenie = repoWypozyczen.znajdzWgId(idWypozyczenia);
         if (wypozyczenie != null) {
@@ -116,8 +189,14 @@ public class SerwisWypozyczen {
         return 0;
     }
     
-    // Dodaj metody do zarządzania Klientami i Pojazdami bezpośrednio (jeśli potrzebne)
-    
+    /**
+     * Dodaje nowego klienta do repozytorium lub aktualizuje istniejącego.
+     * Metoda {@link RepozytoriumKlientow#zapisz(Klient)} powinna zawierać logikę
+     * rozróżniającą dodanie nowego klienta od aktualizacji istniejącego na podstawie ID.
+     * Loguje informację o dodaniu lub aktualizacji klienta.
+     *
+     * @param klient Obiekt {@link Klient} do dodania lub zaktualizowania. Nie powinien być null.
+     */
     public void dodajKlienta(Klient klient) {
         if (klient == null) {
             System.err.println("Błąd: Próba dodania pustego obiektu klienta (null).");
@@ -130,7 +209,26 @@ public class SerwisWypozyczen {
     }
 
     
-    
+    /**
+     * Dodaje nowego klienta lub aktualizuje dane istniejącego klienta na podstawie numeru NIP.
+     * Jeśli klient o podanym NIP już istnieje:
+     * - Gdy {@code czyAktualizowacIstniejacego} jest {@code true}, aktualizuje dane kontaktowe klienta.
+     * - Gdy {@code czyAktualizowacIstniejacego} jest {@code false}, nie dokonuje zmian i zwraca istniejącego klienta.
+     * Jeśli klient o podanym NIP nie istnieje, tworzy nowego klienta z podanymi danymi.
+     * Próbuje dynamicznie uzyskać kolejne ID dla nowego klienta z implementacji
+     * {@code InMemoryKlientRepository} za pomocą refleksji. W przypadku niepowodzenia,
+     * generuje ID na podstawie ostatniego klienta w repozytorium.
+     *
+     * @param nazwaFirmy Nazwa firmy klienta.
+     * @param nip Numer NIP klienta (unikalny identyfikator). Nie może być pusty.
+     * @param imieKontakt Imię osoby kontaktowej.
+     * @param nazwiskoKontakt Nazwisko osoby kontaktowej.
+     * @param telefonKontakt Telefon kontaktowy.
+     * @param emailKontakt Adres e-mail kontaktowy.
+     * @param czyAktualizowacIstniejacego Flaga określająca, czy aktualizować dane istniejącego klienta.
+     * @return Obiekt {@link Klient} (nowo utworzony lub zaktualizowany) lub {@code null}, jeśli NIP jest pusty.
+     *         W przypadku, gdy klient istnieje a {@code czyAktualizowacIstniejacego} jest {@code false}, zwraca istniejącego klienta.
+     */
     public Klient dodajLubAktualizujKlienta(String nazwaFirmy, String nip, String imieKontakt,
                                           String nazwiskoKontakt, String telefonKontakt, String emailKontakt,
                                           boolean czyAktualizowacIstniejacego) {
@@ -162,19 +260,24 @@ public class SerwisWypozyczen {
             // Potrzebujemy sposobu na uzyskanie nowego ID. Zakładając, że repozytorium sobie z tym radzi
             // lub mamy metodę w InMemoryKlientRepository.
             // W uproszczeniu, jeśli Klient ma konstruktor, który przyjmuje ID, a repozytorium je generuje:
-            int noweId = 0; // Sygnalizacja dla repo, by nadało ID
+            int noweId = 0; // Sygnalizacja dla repo, by nadało ID lub wartość domyślna
              if (repoKlientow instanceof projekt_grupa_7.repozytorium.implementacje.InMemoryKlientRepository) {
                  try {
-                    // Próba wywołania statycznej metody getNextId() z InMemoryKlientRepository
+                    // Próba wywołania statycznej metody getNextId() z InMemoryKlientRepository za pomocą refleksji.
+                    // Jest to specyficzne dla tej implementacji repozytorium i pozwala na centralne zarządzanie ID.
                     java.lang.reflect.Method m = projekt_grupa_7.repozytorium.implementacje.InMemoryKlientRepository.class.getMethod("getNextId");
-                    noweId = (Integer) m.invoke(null);
+                    noweId = (Integer) m.invoke(null); // Wywołanie metody statycznej, stąd null jako argument obiektu
                  } catch (Exception reflectionEx) {
                     System.err.println("Nie udało się pobrać nextId przez refleksję dla nowego klienta: " + reflectionEx.getMessage());
-                    // Awaryjnie, jeśli refleksja zawiedzie, np. ID=ostatni+1
+                    // Awaryjne generowanie ID, jeśli refleksja zawiedzie: ID ostatniego klienta + 1.
+                    // Jest to mniej bezpieczne i może prowadzić do kolizji ID, jeśli repozytorium ma inną logikę.
                     List<Klient> wszyscyKlienci = repoKlientow.znajdzWszystkie();
                     noweId = wszyscyKlienci.isEmpty() ? 1 : wszyscyKlienci.get(wszyscyKlienci.size()-1).getIdKlienta() + 1;
                  }
             }
+            // Jeśli repozytorium nie jest instancją InMemoryKlientRepository lub refleksja zawiodła,
+            // a nie zaimplementowano innego mechanizmu generowania ID, 'noweId' może pozostać 0.
+            // W takim przypadku, konstruktor Klienta lub metoda zapisz w repozytorium powinny obsłużyć nadanie ID.
 
 
             Klient nowyKlient = new Klient(noweId, nazwaFirmy, nip, imieKontakt, nazwiskoKontakt, telefonKontakt, emailKontakt);
