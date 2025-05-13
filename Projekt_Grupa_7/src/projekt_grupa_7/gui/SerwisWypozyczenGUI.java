@@ -13,8 +13,14 @@ import java.util.Date;
 import java.util.List;
 import com.toedter.calendar.JDateChooser;
 
-public class SerwisWypozyczenGUI extends JFrame {
+/**
+ * Główna klasa okna graficznego aplikacji wypożyczalni.
+ * Wykorzystuje Swing do stworzenia interfejsu z zakładkami
+ * do zarządzania pojazdami, klientami i wypożyczeniami.
+ */
 
+public class SerwisWypozyczenGUI extends JFrame {
+    // Referencja do serwisu logiki biznesowej - kluczowy element do interakcji z danymi
     private SerwisWypozyczen serwis;
     private SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
 
@@ -40,9 +46,9 @@ public class SerwisWypozyczenGUI extends JFrame {
     private JTextField klientNazwaFirmyField, klientNipField, klientImieKontaktField, klientNazwiskoKontaktField, klientTelefonField, klientEmailField;
     private JTextField klientIdDoUsunieciaField;
 
-    // Zakładka Wypożyczenia - ZMODYFIKOWANE/NOWE POLA
+    // Zakładka Wypożyczenia
     private JPanel wypozyczeniaPanel;
-    private JTextArea wypozyczeniaTextArea; // lub JTable
+    private JTextArea wypozyczeniaTextArea;
     private JComboBox<KlientWrapper> wypozyczenieKlientComboBox; // NOWE - do wyboru klienta
     private JTextField wypozyczeniePojazdIdField;
     private JDateChooser wypozyczenieDataOdChooser;
@@ -51,7 +57,10 @@ public class SerwisWypozyczenGUI extends JFrame {
     private JDateChooser wypozyczenieDataZwrotuChooser;
     private JButton wyczyscZakonczoneButton;
 
-
+     /**
+     * Konstruktor głównego okna aplikacji.
+     * @param serwis Instancja serwisu logiki biznesowej.
+     */
     public SerwisWypozyczenGUI(SerwisWypozyczen serwis) {
         this.serwis = serwis;
         setTitle("System Wypożyczalni Pojazdów Budowlanych");
@@ -62,7 +71,9 @@ public class SerwisWypozyczenGUI extends JFrame {
         initComponents();
         loadInitialData();
     }
-
+    /**
+     * Inicjalizuje główne komponenty GUI (zakładki).
+     */
     private void initComponents() {
         tabbedPane = new JTabbedPane();
 
@@ -76,6 +87,14 @@ public class SerwisWypozyczenGUI extends JFrame {
 
         add(tabbedPane);
     }
+    
+     // --- Metody Tworzące Panele Zakładek ---
+
+    /**
+     * Tworzy i konfiguruje panel zakładki "Pojazdy".
+     * Zawiera listę pojazdów (JTextArea lub JTable) oraz formularz
+     * do dodawania i usuwania pojazdów.
+     */
 
     // --- ZAKŁADKA POJAZDY ---
     private void createPojazdyPanel() {
@@ -144,17 +163,16 @@ public class SerwisWypozyczenGUI extends JFrame {
         dodajPojazdButton.addActionListener(this::dodajPojazdAction);
 
         // Ustawienia GridBagConstraints dla przycisku, aby go wyśrodkować
-        gbc.gridx = 0; // Zacznij od pierwszej kolumny
-        gbc.gridy = row; // W bieżącym, nowym wierszu
-        gbc.gridwidth = 2; // Przycisk obejmie 2 kolumny (zakładając, że formularz ma 2 kolumny: etykiety i pola)
-        gbc.anchor = GridBagConstraints.CENTER; // WYŚRODKUJ komponent w jego przydzielonej przestrzeni
-        gbc.fill = GridBagConstraints.NONE;     // NIE rozciągaj przycisku, użyj jego preferowanego rozmiaru
-        gbc.insets = new Insets(10, 0, 10, 0); // Opcjonalnie: dodaj trochę marginesu górnego/dolnego
+        gbc.gridx = 0;
+        gbc.gridy = row; 
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.fill = GridBagConstraints.NONE;     
+        gbc.insets = new Insets(10, 0, 10, 0); 
         inputPanel.add(dodajPojazdButton, gbc);
         row++; // Inkrementuj wiersz dla kolejnych elementów
-        // Resetuj ustawienia gbc dla kolejnych komponentów, jeśli będą dodawane do tego samego inputPanel
         gbc.gridwidth = 1; // Wróć do zajmowania jednej kolumny
-        gbc.anchor = GridBagConstraints.WEST; // Wyrównaj do lewej (lub inne domyślne)
+        gbc.anchor = GridBagConstraints.WEST;
         gbc.fill = GridBagConstraints.HORIZONTAL; // Domyślnie pola tekstowe mogą się rozciągać
         gbc.insets = new Insets(2,2,2,2); // Wróć do standardowych marginesów   
         // Oddzielenie sekcji
@@ -178,13 +196,13 @@ public class SerwisWypozyczenGUI extends JFrame {
         gbc.gridx = 0; gbc.gridy = row; gbc.weighty = 1.0; gbc.fill = GridBagConstraints.VERTICAL;
         inputPanel.add(new JLabel(""), gbc);
 
-        pojazdyPanel.add(inputPanel, BorderLayout.EAST);
-
+        pojazdyPanel.add(inputPanel, BorderLayout.EAST); // Dodanie formularza
+        // Przycisk odświeżania na dole
         JButton odswiezPojazdyButton = new JButton("Odśwież Listę Pojazdów");
         odswiezPojazdyButton.addActionListener(e -> refreshPojazdyArea());
         pojazdyPanel.add(odswiezPojazdyButton, BorderLayout.SOUTH);
     }
-
+    // Metody createKoparkaSpecPanel, createDzwigSpecPanel, createWywrotkaSpecPanel - tworzą małe panele dla specyficznych atrybutów
     private JPanel createKoparkaSpecPanel() {
         JPanel panel = new JPanel(new GridLayout(0, 2, 5, 5));
         panel.setBorder(BorderFactory.createTitledBorder("Specyfikacja Koparki"));
@@ -220,7 +238,7 @@ public class SerwisWypozyczenGUI extends JFrame {
         panel.add(new JLabel("Poj. skrzyni (m3):")); panel.add(wywrotkaPojemnoscSkrzyniField);
         return panel;
     }
-
+     // Aktualizuje widoczność paneli ze specyfikacjami pojazdów na podstawie wyboru w ComboBoxie.
     private void updatePojazdSpecFieldsVisibility() {
         String selectedType = (String) pojazdTypComboBox.getSelectedItem();
         koparkaSpecPanel.setVisible("Koparka".equals(selectedType));
@@ -232,7 +250,7 @@ public class SerwisWypozyczenGUI extends JFrame {
              pojazdyPanel.repaint();
         }
     }
-
+    // Obsługuje akcję kliknięcia przycisku "Dodaj Pojazd".
     private void dodajPojazdAction(ActionEvent e) {
         try {
             String id = pojazdIdField.getText();
@@ -283,7 +301,7 @@ public class SerwisWypozyczenGUI extends JFrame {
             JOptionPane.showMessageDialog(this, "Błąd dodawania pojazdu: " + ex.getMessage(), "Błąd", JOptionPane.ERROR_MESSAGE);
         }
     }
-    
+    // Obsługuje akcję kliknięcia przycisku "Usuń Wybrany Pojazd".
     private void usunPojazdAction(ActionEvent e) {
         String idPojazdu = pojazdIdDoUsunieciaField.getText().trim();
         if (idPojazdu.isEmpty()) {
@@ -299,14 +317,9 @@ public class SerwisWypozyczenGUI extends JFrame {
 
         if (response == JOptionPane.YES_OPTION) {
             try {
-                // Zakładamy, że serwis będzie miał metodę do usuwania pojazdu
-                // lub repozytorium będzie miało metodę usun(String id)
                 Pojazd pojazdDoUsuniecia = serwis.getRepoPojazdow().znajdzWgId(idPojazdu);
                 if (pojazdDoUsuniecia != null) {
-                    // Dodatkowe sprawdzenie: czy pojazd nie jest aktualnie wypożyczony?
-                    // To wymagałoby sprawdzenia w repozytorium wypożyczeń.
-                    // Na razie uproszczone usuwanie.
-                    serwis.getRepoPojazdow().usun(idPojazdu); // Zakładając, że repo ma taką metodę
+                    serwis.getRepoPojazdow().usun(idPojazdu);
                     refreshPojazdyArea();
                     pojazdIdDoUsunieciaField.setText(""); // Wyczyść pole
                     JOptionPane.showMessageDialog(this, "Pojazd o ID: " + idPojazdu + " został usunięty.", "Sukces", JOptionPane.INFORMATION_MESSAGE);
@@ -373,19 +386,18 @@ public class SerwisWypozyczenGUI extends JFrame {
         JButton dodajKlientaButton = new JButton("Dodaj Klienta");
         dodajKlientaButton.addActionListener(this::dodajKlientaAction);
         // Ustawienia GridBagConstraints dla przycisku, aby go wyśrodkować
-        gbc.gridx = 0; // Zacznij od pierwszej kolumny
-        gbc.gridy = row; // W bieżącym, nowym wierszu
-        gbc.gridwidth = 2; // Przycisk obejmie 2 kolumny (zakładając, że formularz ma 2 kolumny: etykiety i pola)
-        gbc.anchor = GridBagConstraints.CENTER; // WYŚRODKUJ komponent w jego przydzielonej przestrzeni
-        gbc.fill = GridBagConstraints.NONE;     // NIE rozciągaj przycisku, użyj jego preferowanego rozmiaru
-        gbc.insets = new Insets(10, 0, 10, 0); // Opcjonalnie: dodaj trochę marginesu górnego/dolnego
+        gbc.gridx = 0;
+        gbc.gridy = row;
+        gbc.gridwidth = 2;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.insets = new Insets(10, 0, 10, 0); 
         inputPanel.add(dodajKlientaButton, gbc);
-        row++; // Inkrementuj wiersz dla kolejnych elementów
-        // Resetuj ustawienia gbc dla kolejnych komponentów, jeśli będą dodawane do tego samego inputPanel
-        gbc.gridwidth = 1; // Wróć do zajmowania jednej kolumny
-        gbc.anchor = GridBagConstraints.WEST; // Wyrównaj do lewej (lub inne domyślne)
-        gbc.fill = GridBagConstraints.HORIZONTAL; // Domyślnie pola tekstowe mogą się rozciągać
-        gbc.insets = new Insets(2,2,2,2); // Wróć do standardowych marginesów   
+        row++;
+        gbc.gridwidth = 1;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(2,2,2,2);   
         // Dodanie separatora
         gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 2; gbc.fill = GridBagConstraints.HORIZONTAL;
         inputPanel.add(new JSeparator(SwingConstants.HORIZONTAL), gbc);
@@ -506,10 +518,6 @@ public class SerwisWypozyczenGUI extends JFrame {
             if (response == JOptionPane.YES_OPTION) {
                 Klient klientDoUsuniecia = serwis.getRepoKlientow().znajdzWgId(idKlienta);
                 if (klientDoUsuniecia != null) {
-                    // UWAGA: Tutaj powinna być logika sprawdzająca, czy klient nie ma powiązanych,
-                    // aktywnych wypożyczeń. Jeśli ma, usuwanie powinno być zablokowane lub
-                    // powinna być opcja "miękkiego usunięcia" (np. oznaczenie jako nieaktywny).
-                    // Na potrzeby tego przykładu wykonujemy twarde usunięcie.
                     boolean czyMaAktywneWypozyczenia = false;
                     if (serwis.getRepoWypozyczen() != null) {
                         List<Wypozyczenie> wypozyczeniaKlienta = serwis.getRepoWypozyczen().znajdzWgKlienta(klientDoUsuniecia);
@@ -556,7 +564,14 @@ public class SerwisWypozyczenGUI extends JFrame {
             }
         }
     }
-
+    
+    /**
+     * Tworzy i konfiguruje panel zakładki "Wypożyczenia".
+     * Zawiera listę wypożyczeń (JTextArea lub JTable) oraz panele
+     * do rejestrowania nowego wypożyczenia (z wyborem klienta i dat),
+     * kończenia istniejącego i czyszczenia zakończonych.
+     */
+    
     // --- ZAKŁADKA WYPOŻYCZENIA ---
     private void createWypozyczeniaPanel() {
         wypozyczeniaPanel = new JPanel(new BorderLayout(5,5));
@@ -745,7 +760,9 @@ public class SerwisWypozyczenGUI extends JFrame {
             }
         }
     }
-
+    
+    // Odświeża zawartość listy/tabeli wypożyczeń.
+    
     // --- METODY ODŚWIEŻAJĄCE ---
 private void refreshPojazdyArea() {
         if (pojazdyTextArea != null) {
@@ -788,7 +805,7 @@ private void refreshPojazdyArea() {
             }
         }
     }
-
+    //Wywołuje metody odświeżające przy starcie aplikacji.
     private void loadInitialData() {
         refreshPojazdyArea();
         refreshKlienciArea();
